@@ -1,9 +1,18 @@
+import { createServer } from 'https';
 import { Server } from 'socket.io';
-const io = new Server(29084, {
+import { readFileSync } from 'fs';
+var options = {
+    key: readFileSync('./file.pem'),
+    cert: readFileSync('./file.crt')
+  };
+const httpsServer = createServer(options);
+const io = new Server(httpsServer, {
     cors: {
         origin: ['https://blackjack.drantini.dev']
     }
 });
+
+httpsServer.listen(29084);
 import fetch from 'node-fetch'
 let maxPlayers = 8;
 let database = {
