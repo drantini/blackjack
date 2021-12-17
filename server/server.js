@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
-const io = new Server(8888, {
+const io = new Server(29084, {
     cors: {
-        origin: ['http://localhost:3000']
+        origin: ['https://blackjack.drantini.dev']
     }
 });
 import fetch from 'node-fetch'

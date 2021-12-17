@@ -14,7 +14,7 @@ function App() {
 
   useEffect(() => {
     if(!loading){
-      const socket = socketIoClient(`http://${window.location.hostname}:8888`);
+      const socket = socketIoClient(`http://168.119.6.40:29084`);
       setSocket(socket);
   
   
