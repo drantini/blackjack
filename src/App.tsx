@@ -12,12 +12,13 @@ import socketIoClient, { Socket } from 'socket.io-client';
 function App() {
   const [user, loading, error] = useAuthState(auth);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [certificate, setCertificate] = useState('');
 
   useEffect(() => {
-    if(!loading){
+    if(!loading && certificate != ''){
       const socket = socketIoClient(`https://168.119.6.40:29084`,
       {
-        ca: readFileSync('./cert.crt', 'utf8')
+        ca: certificate
       });
       setSocket(socket);
   
@@ -25,7 +26,13 @@ function App() {
     };
 
 
-  }, [user]) 
+  }, [certificate]) 
+
+  useEffect(() => {
+    if (!loading){
+      setCertificate(readFileSync('./cert.crt', 'utf8'));
+    }
+  }, [user])
   return (
    <div className="Blackjack">
       {user && socket ? <Table user={user} socket={socket}/> : <Auth/>}
