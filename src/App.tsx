@@ -1,25 +1,32 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useState, useRef } from 'react';
 import './App.css';
+import { auth, firestore } from './helpers/firebase';
+import { useAuthState } from 'react-firehooks/auth';
+
+import Auth from './components/Auth/Auth';
+import Table from './components/Table/Table';
+import socketIoClient, { Socket } from 'socket.io-client';
+
 
 function App() {
+  const [user, loading, error] = useAuthState(auth);
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  useEffect(() => {
+    if(!loading){
+      const socket = socketIoClient(`http://${window.location.hostname}:8888`);
+      setSocket(socket);
+  
+  
+    };
+
+
+  }, [user]) 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+   <div className="Blackjack">
+      {user && socket ? <Table user={user} socket={socket}/> : <Auth/>}
     </div>
+    
   );
 }
 

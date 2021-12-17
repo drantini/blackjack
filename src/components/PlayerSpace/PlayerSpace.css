@@ -1,0 +1,46 @@
+.player-space{
+    display:flex;
+    flex-direction: column;
+    margin: 15px;
+    min-height: 25vh;
+    justify-content: flex-end;
+    min-width: fit-content;
+    max-width: 25vw;
+    padding: 5px;
+    transition: 0.3s;
+    border-radius: 10px;
+}
+.cards{
+    width:100%;
+    display: inline-flex;
+    margin-left: 75px;
+}
+.player-information{
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+.player-box-information{
+    position: absolute;
+    background: rgb(37, 40, 53);
+    border: 1px solid rgb(60, 64, 83);
+    padding: 10px;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    overflow:hidden
+}
+
+.bet-box{
+    background: rgb(47, 51, 68);
+    border: 1px solid rgb(34, 36, 46);
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+
+}
+.cards > *{
+    margin-left: -65px;
+}
+.card{
+    max-height: 15vh;
+}

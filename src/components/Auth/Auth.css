@@ -1,0 +1,37 @@
+.auth{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    --text-divider-gap: 1rem; 
+}
+.auth > * {
+    margin: 2.5px;
+}
+.separator{
+    display: flex;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    align-items: center;
+    width: 100%;
+}
+.login-register-switch{
+    text-decoration: underline;
+    font-style: italic;
+}
+.login-register-switch:hover{
+    cursor: pointer;
+}
+.separator::before,
+.separator::after {
+  content: '';
+  height: 1px;
+  background-color: silver;
+  flex-grow: 1; 
+}
+.separator::before {
+    margin-right: var(--text-divider-gap);
+}
+  
+.separator::after {
+    margin-left: var(--text-divider-gap);
+}
