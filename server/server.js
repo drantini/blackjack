@@ -243,6 +243,7 @@ io.on('connection', socket => {
         io.to(socket.id).emit('add', amount);
         database['players'][id]['balance'] += amount
         io.emit('game-update', database);
+        
     })
     socket.on('hit', async () => {
         if (database['game']['turnId'] == socket.id && database['players'] != null){
