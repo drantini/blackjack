@@ -18,6 +18,7 @@ let database = {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+  console.log("I'M RUNNING!")
 async function newDeck(){
     await fetch('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=6').then((response) => response.json()).then((data) => {
         if(data.success == true){
@@ -243,7 +244,7 @@ io.on('connection', socket => {
         io.to(socket.id).emit('add', amount);
         database['players'][id]['balance'] += amount
         io.emit('game-update', database);
-        
+
     })
     socket.on('hit', async () => {
         if (database['game']['turnId'] == socket.id && database['players'] != null){
