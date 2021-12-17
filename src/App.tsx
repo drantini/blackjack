@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './App.css';
+import { readFileSync } from 'fs';
 import { auth, firestore } from './helpers/firebase';
 import { useAuthState } from 'react-firehooks/auth';
 
@@ -14,7 +15,10 @@ function App() {
 
   useEffect(() => {
     if(!loading){
-      const socket = socketIoClient(`https://168.119.6.40:29084`);
+      const socket = socketIoClient(`https://168.119.6.40:29084`,
+      {
+        ca: readFileSync('./cert.crt', 'utf8')
+      });
       setSocket(socket);
   
   
