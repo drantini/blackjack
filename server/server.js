@@ -7,7 +7,7 @@ import { Server } from 'socket.io';
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: ['https://blackjack.drantini.dev']
+        origin: ['https://blackjack.drantini.dev', 'http://localhost:3000']
     }
 });
 httpServer.listen(process.env.PORT || 8080);
@@ -43,7 +43,8 @@ const hasAceInHand = (cardsOnHand) => {
     return false;
 }
 function getCardValue(cardsOnHand){
-
+    console.log(cardsOnHand);
+    
     let sum = 0;
     for (const card of cardsOnHand) {
       sum = sum + (card.value == 'ACE' ? 11 : (card.value == "KING" || card.value == "QUEEN" || card.value == "JACK") ? 10 : parseInt(card.value));
@@ -218,9 +219,11 @@ io.on('connection', socket => {
                 database['players'][id]['state'] = 'wait';
             }
             io.emit('game-update', database);
-
         }
+        if(database['game'].gameState == "underway")     
+            getNextPlayer();        
         io.emit('game-update', database);
+
     })
 
     socket.on('bet', (betAmount) => {
@@ -249,7 +252,7 @@ io.on('connection', socket => {
     })
     socket.on('force-add', (amount) => {
         io.to(socket.id).emit('add', amount);
-        database['players'][id]['balance'] += amount
+        database['players'][socket.id]['balance'] += amount
         io.emit('game-update', database);
 
     })
@@ -315,7 +318,9 @@ io.on('connection', socket => {
             io.to(id).emit('alert-kick')
             io.emit('game-update', database);
 
-        }
+        }       
+        if(database['game'].gameState == "underway")     
+            getNextPlayer();
         io.emit('game-update', database);    
     })
 

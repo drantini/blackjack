@@ -7,7 +7,7 @@ import { useAuthState } from 'react-firehooks/auth';
 import Auth from './components/Auth/Auth';
 import Table from './components/Table/Table';
 import socketIoClient, { Socket } from 'socket.io-client';
-
+let developer = true;
 
 function App() {
   const [user, loading, error] = useAuthState(auth);
@@ -15,7 +15,7 @@ function App() {
 
   useEffect(() => {
     if(!loading){
-      const socket = socketIoClient(`https://blackjack-sostmi.herokuapp.com/`);
+      const socket = socketIoClient(developer ? 'http://localhost:8080': `https://blackjack-sostmi.herokuapp.com/`);
       setSocket(socket);
   
   

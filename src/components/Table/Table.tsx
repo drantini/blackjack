@@ -189,17 +189,53 @@ function Table(props : any) {
     }
 
     const claimDailyBonus = () => {
-        let userRef = doc(firestore, 'users', props.user.uid)
+        const userRef = doc(firestore, 'users', props.user.uid);
+        getDoc(userRef).then((res) => {
+            if (res?.data()?.tag == 'ADMIN'){
+                setIsAdmin(true);
+            }
+            const formatSeconds = (secs: number) => {
+                    function pad(n : any) {
+                      return (n < 10 ? "0" + n : n);
+                    }
+                  
+                    var h = Math.floor(secs / 3600);
+                    var m = Math.floor(secs / 60) - (h * 60);
+                    var s = Math.floor(secs - h * 3600 - m * 60);
+                  
+                    return pad(h) +":"+ pad(m) +":"+ pad(s);
+                  
+            }
+            
+            let dataToWrite : any = res.data();
+            let dateDailyBonus = dataToWrite.dailyBonus.toDate()
+            let compareDate = (dateDailyBonus.getTime() - new Date(Date.now()).getTime())/1000;
+            if (dateDailyBonus > new Date(Date.now())){
+                setInterval(() => {
+                    compareDate = (dateDailyBonus.getTime() - new Date(Date.now()).getTime())/1000;
+                    if (compareDate > 0){
+                        setDailyBonusCooldown(formatSeconds(compareDate));
+                    }
+                }, 1000)
+            }
 
-        let currDate = new Date(Date.now())
-        currDate.setDate(currDate.getDate()+1);
+            if (dateDailyBonus < new Date(Date.now())){
+                let currDate = new Date(Date.now())
+                currDate.setDate(currDate.getDate()+1);
+        
+                updateDoc(userRef,{
+                    dailyBonus: Timestamp.fromDate(currDate)
+                })
+        
+                props.socket.emit('force-add', 2000)
+                setDailyBonusAvailable(false);
+            }
 
-        updateDoc(userRef,{
-            dailyBonus: Timestamp.fromDate(currDate)
-        })
+            dataToWrite.firebaseId = res.id;
+            setPlayerInformation(dataToWrite);
+        });
 
-        props.socket.emit('force-add', 2000)
-        setDailyBonusAvailable(false);
+
     }
     
     
@@ -246,44 +282,48 @@ function Table(props : any) {
                 </div>
                 <small className="log-out" onClick={logOut}>Log out</small>
             </div>
-            <div className="playing-space">
-                <DealerSpace cards={dealer || []} canShow={gameData.turnId == "Dealer"} />
-                <div className="separator"> <small style={{textTransform: 'uppercase'}}>{gameData.gameState} {countdown > 0 && gameData.gameState == "starting" ? `in ${countdown} seconds` : ''}</small></div>
-                <div className="players">
-                    {players.length > 0 && players.map((player) => <PlayerSpace playerTurn={gameData.turnId == player.id} isLocal={player.id == props.socket.id} player={player}
-                    key={player.id} isAdmin={isAdmin} socket={props.socket} gameData={gameData}/>)}
+            <>
+                <div className="playing-space">
+                    <DealerSpace cards={dealer || []} canShow={gameData.turnId == "Dealer"} />
+                    <div className="separator"> <small style={{textTransform: 'uppercase'}}>{gameData.gameState} {countdown > 0 && gameData.gameState == "starting" ? `in ${countdown} seconds` : ''}</small></div>
+                    <div className="players">
+                        {players.length > 0 && players.map((player) => <PlayerSpace playerTurn={gameData.turnId == player.id} isLocal={player.id == props.socket.id} player={player}
+                        key={player.id} isAdmin={isAdmin} socket={props.socket} gameData={gameData}/>)}
+                        
+                    </div>
+                </div>
+                {(gameData.gameState == "underway" || gameData.gameState == 'finished') && <div className="play-buttons">
                     
-                </div>
-            </div>
-            {(gameData.gameState == "underway" || gameData.gameState == 'finished') && <div className="play-buttons">
-                
-                {gameData.turnId == props.socket.id ? <div>
-                    <button onClick={() => props.socket.emit('stand')}><span className="big-icon">✋</span><br/>STAND</button>
-                    <button onClick={() => props.socket.emit('hit')}><span className="big-icon">👉</span><br/>HIT</button>
-                </div> : <span>{gameResult}</span>}
-            </div>}
-            {(gameData.gameState == "waiting" || gameData.gameState == "starting") && 
-            <div className="betting">
-                <div className="betting-row">
-                    <small>Betting: {betAmount}$</small>&nbsp;
-                </div>
-                <div className="betting-row">
-                    <button onClick={() => setBetAmount(0)}>CLEAR</button>
-                    <button className="bet-button" disabled={!(gameData.gameState == "waiting" || gameData.gameState == "starting")} onClick={betAccept}>BET</button>
-                </div>
+                    {gameData.turnId == props.socket.id ? <div>
+                        <button onClick={() => props.socket.emit('stand')}><span className="big-icon">✋</span><br/>STAND</button>
+                        <button onClick={() => props.socket.emit('hit')}><span className="big-icon">👉</span><br/>HIT</button>
+                    </div> : <span>{gameResult}</span>}
+                </div>}
+                {(gameData.gameState == "waiting" || gameData.gameState == "starting") && 
+                <div className="betting">
+                    <div className="betting-row">
+                        <small>Betting: {betAmount}$</small>&nbsp;
+                    </div>
+                    <div className="betting-row">
+                        <button onClick={() => setBetAmount(0)}>CLEAR</button>
+                        <button className="bet-button" disabled={!(gameData.gameState == "waiting" || gameData.gameState == "starting")} onClick={betAccept}>BET</button>
+                    </div>
 
 
-                <Chip color="green" value="10" onClick={() => handleBetValue(10)}/>
-                <Chip color="red" value="100" onClick={() => handleBetValue(100)}/>
-                <Chip color="navy" value="500" onClick={() => handleBetValue(500)}/>
-                <Chip color="orange" value="1K" onClick={() => handleBetValue(1000)}/>
-                <Chip color="purple" value="5K" onClick={() =>handleBetValue(5000)}/>
+                    <Chip color="green" value="10" onClick={() => handleBetValue(10)}/>
+                    <Chip color="red" value="100" onClick={() => handleBetValue(100)}/>
+                    <Chip color="navy" value="500" onClick={() => handleBetValue(500)}/>
+                    <Chip color="orange" value="1K" onClick={() => handleBetValue(1000)}/>
+                    <Chip color="purple" value="5K" onClick={() =>handleBetValue(5000)}/>
 
-                <Chip color="black" value="MAX" onClick={() => handleBetValue(playerInformation.balance)}/>
- 
+                    <Chip color="black" value="MAX" onClick={() => handleBetValue(playerInformation.balance)}/>
+    
 
-            </div>}
+                </div>}
+            </>
         </div>
+  
+
     )
 }
 
