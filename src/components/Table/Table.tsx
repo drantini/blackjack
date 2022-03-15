@@ -69,6 +69,7 @@ function Table(props : any) {
 
 
     useEffect(() => {
+        console.log(gameData.gameState);
         props.socket.on('game-update', (data : any) => {
             setPlayers([]);
             setGameData([]);
@@ -282,6 +283,7 @@ function Table(props : any) {
                 </div>
                 <small className="log-out" onClick={logOut}>Log out</small>
             </div>
+            {gameData.gameState ? 
             <>
                 <div className="playing-space">
                     <DealerSpace cards={dealer || []} canShow={gameData.turnId == "Dealer"} />
@@ -320,7 +322,10 @@ function Table(props : any) {
     
 
                 </div>}
-            </>
+            </> : 
+            <>
+                <span>Connecting to server...</span>
+            </>} 
         </div>
   
 

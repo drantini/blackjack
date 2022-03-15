@@ -191,7 +191,15 @@ io.on('connection', socket => {
         if (Object.keys(database['players']).length >= maxPlayers){
             return;
         }
+
         let playerInfo = data;
+        if(Object.keys(database['players']).length > 0){
+            for(const id in database['players']){
+                if(database['players'][id].firebaseId == playerInfo.firebaseId){
+                    return;
+                }
+            }
+        }
         database["players"][socket.id] = playerInfo;
         database["players"][socket.id].bet = 0;
         database['players'][socket.id]['stats'] = {
@@ -210,14 +218,10 @@ io.on('connection', socket => {
         delete database["players"][socket.id];
         //TODO: Change this to players with bet
         if (Object.keys(database['players']).length <= 0){
+
             database['game'].gameState = 'waiting';
             database['dealer'] = {};
             database['game'].turnId = '';
-            for(const id in database['players']){
-                database['players'][id]['cards'] = [];
-                database['players'][id]['bet'] = 0;
-                database['players'][id]['state'] = 'wait';
-            }
             io.emit('game-update', database);
         }
         if(database['game'].gameState == "underway")     
@@ -310,11 +314,6 @@ io.on('connection', socket => {
             database['game'].gameState = 'waiting';
             database['dealer'] = {};
             database['game'].turnId = '';
-            for(const id in database['players']){
-                database['players'][id]['cards'] = [];
-                database['players'][id]['bet'] = 0;
-                database['players'][id]['state'] = 'wait';
-            }
             io.to(id).emit('alert-kick')
             io.emit('game-update', database);
 
