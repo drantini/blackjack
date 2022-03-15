@@ -7,7 +7,7 @@ import { useAuthState } from 'react-firehooks/auth';
 import Auth from './components/Auth/Auth';
 import Table from './components/Table/Table';
 import socketIoClient, { Socket } from 'socket.io-client';
-let developer = true;
+let developer = false;
 
 function App() {
   const [user, loading, error] = useAuthState(auth);
