@@ -15,10 +15,7 @@ function App() {
 
   useEffect(() => {
     if(!loading){
-      const socket = socketIoClient(`https://168.119.6.40:29084`,
-      {
-        rejectUnauthorized: false //TODO: Fix this, it is not recommended.
-      });
+      const socket = socketIoClient(`https://blackjack-sostmi.herokuapp.com/`);
       setSocket(socket);
   
   

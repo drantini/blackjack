@@ -1,18 +1,16 @@
-import { createServer } from 'https';
+import express from 'express';
+
+const app = express();
+import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { readFileSync } from 'fs';
-var options = {
-    key: readFileSync('./file.pem'),
-    cert: readFileSync('./file.crt')
-  };
-const httpsServer = createServer(options);
-const io = new Server(httpsServer, {
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
     cors: {
         origin: ['https://blackjack.drantini.dev']
     }
 });
-
-httpsServer.listen(29084);
+httpServer.listen(process.env.PORT || 8080);
 import fetch from 'node-fetch'
 let maxPlayers = 8;
 let database = {
@@ -27,7 +25,7 @@ let database = {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
-  console.log("I'M RUNNING!")
+console.log("I'M RUNNING!")
 async function newDeck(){
     await fetch('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=6').then((response) => response.json()).then((data) => {
         if(data.success == true){
