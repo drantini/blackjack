@@ -7,6 +7,8 @@ import { useAuthState } from 'react-firehooks/auth';
 import Auth from './components/Auth/Auth';
 import Table from './components/Table/Table';
 import socketIoClient, { Socket } from 'socket.io-client';
+import { ToastProvider, useToasts } from 'react-toast-notifications';
+
 let developer = false;
 
 function App() {
@@ -26,11 +28,14 @@ function App() {
 
 
   return (
-   <div className="Blackjack">
-      {user && socket ? <Table user={user} socket={socket}/> : <Auth/>}
-    </div>
+    <ToastProvider autoDismiss={true} placement='bottom-right'>
+      <div className="Blackjack">
+        {user && socket ? <Table user={user} socket={socket}/> : <Auth/>}
+      </div>
+    </ToastProvider>
+
     
-  );
+  );  
 }
 
 export default App;

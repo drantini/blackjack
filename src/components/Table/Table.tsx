@@ -6,6 +6,7 @@ import { getAuth, signOut } from '@firebase/auth';
 import PlayerSpace from '../PlayerSpace/PlayerSpace';
 import DealerSpace from '../DealerSpace/DealerSpace';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useToasts } from 'react-toast-notifications';
 
 function Chip(props : any){
     return(
@@ -14,6 +15,7 @@ function Chip(props : any){
 }
 
 function Table(props : any) {
+    const { addToast } = useToasts();
 
     const [playerInformation, setPlayerInformation] = useState<any>({});
     const [firstJoinData, setFirstJoinData] = useState(false);
@@ -27,6 +29,7 @@ function Table(props : any) {
     const [changeVal, setChangeVal] = useState(0);
     const [dailyBonusAvailable, setDailyBonusAvailable] = useState(false);
     const [dailyBonusCooldown, setDailyBonusCooldown] = useState<string | null>(null);
+    const [lastGameState, setLastGameState] = useState('');
     useEffect(() => {
         const userRef = doc(firestore, 'users', props.user.uid);
         getDoc(userRef).then((res) => {
@@ -64,12 +67,10 @@ function Table(props : any) {
             setPlayerInformation(dataToWrite);
             setFirstJoinData(true);
         });
-
     }, [])
 
 
     useEffect(() => {
-        console.log(gameData.gameState);
         props.socket.on('game-update', (data : any) => {
             setPlayers([]);
             setGameData([]);
@@ -95,7 +96,6 @@ function Table(props : any) {
             alert("You have been kicked!")
         })
         props.socket.on('add', (val : number) => {
-            console.log("add: " + val);
             let userRef = doc(firestore, 'users', props.user.uid) 
             updateDoc(userRef, {
                 balance: increment(val),
@@ -105,9 +105,9 @@ function Table(props : any) {
             setTimeout(() => {
                 setChangeVal(0);
             }, 5000);
+
         })
         props.socket.on('deduct', (val : number) => {  
-            console.log("deduct: " + val);
             let userRef = doc(firestore, 'users', props.user.uid) 
 
             updateDoc(userRef, {
@@ -117,6 +117,7 @@ function Table(props : any) {
             setTimeout(() => {
                 setChangeVal(0);
             }, 5000);
+
         })
     }, [props.socket])
 
@@ -142,6 +143,36 @@ function Table(props : any) {
             }
         }
     }, [players])
+
+    useEffect(() => {
+        if (gameData.gameState == 'finished' && lastGameState != gameData.gameState){
+            for(let i=0; i<players.length; i++){
+                if(players[i].id == props.socket.id){
+                    setPlayerInformation(players[i]);
+                    let state = players[i]['state'];
+                    if (state == 'lose' || state == 'bust'){
+                        addToast(`You lost ${players[i]['bet']}$!`, {appearance: 'error'});
+                        setGameResult(`You lost! Better luck next time. (-${players[i]['bet']}$)`);
+                    }else if(state == 'win'){
+                        addToast(`You won ${players[i]['bet']*2}$!`, {appearance: 'success'})
+                        setGameResult(`You won! ${players[i]['bet']}$ was added to your balance.`);
+                    }else if(state == 'bj'){
+                        addToast(`You got blackjack and won ${players[i]['bet']*1.5}$!`, {appearance: 'success'})
+                        setGameResult(`You got blackjack! ${players[i]['bet']*1.5}$ was added to your balance.`)
+                    }else if(state == 'stand'){
+                        setGameResult('Please wait... Others are playing their turn.');
+                    }else if(state == 'push'){
+                        setGameResult(`You pushed with dealer! ${players[i]['bet']}$ was refunded to your balance.`)
+                    }
+                    else{
+                        setGameResult('Please wait for your turn...');
+                    }
+                }
+            }
+        }
+        setLastGameState(gameData.gameState);
+
+    }, [gameData.gameState])
     
     useEffect(() => {
         
@@ -157,6 +188,7 @@ function Table(props : any) {
                      }) 
                 }
             }
+            addToast(`Welcome back, ${playerInformation.username}!`, {appearance: 'success'}); 
             props.socket.emit('join', playerInformation)
         }
 
@@ -229,6 +261,7 @@ function Table(props : any) {
                 })
         
                 props.socket.emit('force-add', 2000)
+                addToast('Claimed daily bonus of 2000$.', {appearance: 'success'});
                 setDailyBonusAvailable(false);
             }
 
