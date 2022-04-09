@@ -10,7 +10,7 @@ import { useToasts } from 'react-toast-notifications';
 
 function Chip(props : any){
     return(
-        <motion.div className={`chip`} onClick={props.onClick} style={{border: `${props.color} 0.69vw dashed`}} whileTap={{scale: 0.9}} whileHover={{scale: 1.1, boxShadow: '0px 0px 10px rgb(255, 255, 255)'}}>{props.value}</motion.div>
+        <motion.div className={`chip`} onClick={props.onClick} style={{border: `${props.color} 0.5vw dashed`}} whileTap={{scale: 0.9}} whileHover={{scale: 1.1, boxShadow: '0px 0px 10px rgb(255, 255, 255)'}}>{props.value}</motion.div>
     )
 }
 
@@ -121,30 +121,9 @@ function Table(props : any) {
         })
     }, [props.socket])
 
-    useEffect(() => {
-        for(let i=0; i<players.length; i++){
-            if(players[i].id == props.socket.id){
-                setPlayerInformation(players[i]);
-                let state = players[i]['state'];
-                if (state == 'lose' || state == 'bust'){
-                    setGameResult(`You lost! Better luck next time. (-${players[i]['bet']}$)`);
-                }else if(state == 'win'){
-                    setGameResult(`You won! ${players[i]['bet']}$ was added to your balance.`);
-                }else if(state == 'bj'){
-                    setGameResult(`You got blackjack! ${players[i]['bet']*1.5}$ was added to your balance.`)
-                }else if(state == 'stand'){
-                    setGameResult('Please wait... Others are playing their turn.');
-                }else if(state == 'push'){
-                    setGameResult(`You pushed with dealer! ${players[i]['bet']}$ was refunded to your balance.`)
-                }
-                else{
-                    setGameResult('Please wait for your turn...');
-                }
-            }
-        }
-    }, [players])
 
     useEffect(() => {
+
         if (gameData.gameState == 'finished' && lastGameState != gameData.gameState){
             for(let i=0; i<players.length; i++){
                 if(players[i].id == props.socket.id){
@@ -213,7 +192,7 @@ function Table(props : any) {
                 return alert("You do not have enough balance for that.")
             }
 
-
+    
             props.socket.emit('bet', betAmount);
             setBetAmount(0);
             setPlayerInformation({...playerInformation, balance: result.data()?.balance-betAmount});
@@ -290,7 +269,7 @@ function Table(props : any) {
         <div>
             <div className="top-bar">
                 <div>
-                    <small>[{playerInformation.tag || ""}]{playerInformation.username || ""}</small>
+                    <small>{playerInformation.tag && `[${playerInformation.tag}]`}{playerInformation.username || ""}</small>
                     <button className="daily-button" onClick={claimDailyBonus} disabled={!dailyBonusAvailable}>{
                     dailyBonusAvailable ? 
                     "Claim daily bonus!" :
@@ -316,7 +295,7 @@ function Table(props : any) {
                 </div>
                 <small className="log-out" onClick={logOut}>Log out</small>
             </div>
-            {gameData.gameState ? 
+            {props.socket && props.socket.connected ? 
             <>
                 <div className="playing-space">
                     <DealerSpace cards={dealer || []} canShow={gameData.turnId == "Dealer"} />

@@ -13,7 +13,16 @@
 .big-icon{
     font-size: 4vw;
 }
-
+.play-buttons{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 45vw;
+}
+.play-buttons > div > button{
+    width: 15vw;
+}
 .play-buttons > *{
     margin: 10px;
 }
@@ -89,18 +98,22 @@
 .betting-row{
     flex-basis: 100%;
 }
+.betting-row > button{
+    min-height: 4vh;
+    min-width: 6vw;
+}
 .betting-row > * {
     margin-left: 5px;
     margin-right: 5px;
 }
 .chip{
-    margin: 1rem;
+    margin: 0.6rem;
     border-radius: 50%;
     background: white;
     color: black;
-    height: 4vw;
-    width: 4vw;
-    line-height: 4vw;
+    height: 4vmax;
+    width: 4vmax;
+    line-height: 4vmax;
     text-align: center;
     display: inline-block;
 }

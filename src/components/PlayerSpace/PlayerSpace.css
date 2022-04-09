@@ -28,7 +28,11 @@
     transition: 0.3s;
     display: flex;
     flex-direction: column;
-    overflow:hidden
+    overflow:auto;
+}
+.player-box-buttons{
+    display: flex;
+    flex-direction: column;
 }
 
 .bet-box{

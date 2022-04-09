@@ -11,7 +11,7 @@ import { ToastProvider, useToasts } from 'react-toast-notifications';
 
 let developer = false;
 
-function App() {
+function App() {  
   const [user, loading, error] = useAuthState(auth);
   const [socket, setSocket] = useState<Socket | null>(null);
 

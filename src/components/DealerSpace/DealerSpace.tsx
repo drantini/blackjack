@@ -4,13 +4,13 @@ import '../PlayerSpace/PlayerSpace.css';
 
 
 
-function DealerSpace(props : any) {
+function DealerSpace({cards, canShow} : any) {
 
     const [cardValue, setCardValue] = useState(0);
 
 
     useEffect(() => {
-        if (!props.cards || props.cards.length == 0){
+        if (!cards || cards.length == 0){
             return;
         }
         setCardValue(0);
@@ -27,7 +27,7 @@ function DealerSpace(props : any) {
             let sum = 0;
             let i=0;
             for (const card of cardsOnHand) {
-                if(i==0&&props.canShow == false){
+                if(i==0&&canShow == false){
                     i++;
                     continue;
                 }
@@ -43,16 +43,16 @@ function DealerSpace(props : any) {
     
         }
    
-        setCardValue(countHandValue(props.cards));
+        setCardValue(countHandValue(cards));
  
-    }, [props.cards, props.canShow])
+    }, [cards, canShow])
 
 
 
     return (
         <div className="player-space">
-            {(props.cards && props.cards.length > 0) && <div className="cards" style={{marginLeft: 30*props.cards.length}}>
-                {props.cards.map((card : any, cardIdx : number) => <img className="card" key={cardIdx} src={(props.canShow==true&&cardIdx==0)||cardIdx>0 ? card.image : 'http://chetart.com/blog/wp-content/uploads/2012/05/playing-card-back.jpg'} style={{zIndex: cardIdx}}/>)}
+            {(cards && cards.length > 0) && <div className="cards" style={{marginLeft: 30*cards.length}}>
+                {cards.map((card : any, cardIdx : number) => <img className="card" key={cardIdx} src={(canShow==true&&cardIdx==0)||cardIdx>0 ? card.image : 'http://chetart.com/blog/wp-content/uploads/2012/05/playing-card-back.jpg'} style={{zIndex: cardIdx}}/>)}
             </div>
             }
             <div className="player-information">

@@ -105,13 +105,13 @@ function PlayerSpace(props : any) {
                 <AnimatePresence>
                     {showMenu == true && <motion.div className="player-box-information"
                     initial={{opacity: 0, width: 0, height: 0}}
-                    animate={{opacity: 1, width: '15vw', height: '18vh'}}
+                    animate={{opacity: 1, width: '20vw', height: '18vh'}}
                     exit={{opacity: 0, width: 0, height: 0}}
                     transition={{duration: 0.2}}>
                         <small>Balance: {props.player.balance}$</small>
                         {props.player.stats && Object.keys(props.player.stats).map((stat : any) => <small key={stat}>Session {stat}: {props.player.stats[stat]}</small>)}
 
-                        {props.isAdmin && <div>
+                        {props.isAdmin && <div className="player-box-buttons">
                             <button onClick={kickPerson}>Kick</button>
                             <button onClick={giveBalance}>Give 5k$</button>
                             {/*TODO: FINISH THIS BUTTONS*/}
