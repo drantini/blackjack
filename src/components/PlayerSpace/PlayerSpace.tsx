@@ -114,7 +114,6 @@ function PlayerSpace(props : any) {
                         {props.isAdmin && <div className="player-box-buttons">
                             <button onClick={kickPerson}>Kick</button>
                             <button onClick={giveBalance}>Give 5k$</button>
-                            {/*TODO: FINISH THIS BUTTONS*/}
                             <button onClick={forceHit}>Force Hit</button>
                             <button onClick={forceStand}>Force Stand</button>
 

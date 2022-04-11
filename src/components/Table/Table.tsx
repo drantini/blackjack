@@ -1,12 +1,10 @@
-import React, {useState, useEffect} from 'react'
-import { firestore, auth } from '../../helpers/firebase';
+import { useState, useEffect } from 'react'
 import './Table.css';
-import { getDoc, doc, setDoc, updateDoc, increment, Timestamp } from '@firebase/firestore';
-import { getAuth, signOut } from '@firebase/auth';
+import { increment } from '@firebase/firestore';
 import PlayerSpace from '../PlayerSpace/PlayerSpace';
 import DealerSpace from '../DealerSpace/DealerSpace';
 import { getUser, updateUser, userWin } from '../../helpers/user';
-import { AnimatePresence, motion } from 'framer-motion';
+import {motion } from 'framer-motion';
 import { useToasts } from 'react-toast-notifications';
 
 function Chip(props : any){
@@ -15,63 +13,22 @@ function Chip(props : any){
     )
 }
 
-function Table(props : any) {
+function Table({socket, user, setChangeVal, playerInformation, setPlayerInformation, isAdmin} : any) {
     const { addToast } = useToasts();
 
-    const [playerInformation, setPlayerInformation] = useState<any>({});
-    const [firstJoinData, setFirstJoinData] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false);
     const [players, setPlayers] = useState<any[]>([]);
     const [dealer, setDealer] = useState<any[]>([]);
     const [gameData, setGameData] = useState<any>({});
     const [betAmount, setBetAmount] = useState(0);
     const [countdown, setCountdown] = useState(0);
     const [gameResult, setGameResult] = useState('Please wait... Others are playing their turn.');
-    const [changeVal, setChangeVal] = useState(0);
-    const [dailyBonusAvailable, setDailyBonusAvailable] = useState(false);
-    const [dailyBonusCooldown, setDailyBonusCooldown] = useState<string | null>(null);
+
     const [lastGameState, setLastGameState] = useState('');
-    useEffect(() => {
-        getUser(props.user.uid).then((res) => {
-            if (res?.data()?.tag == 'ADMIN'){
-                setIsAdmin(true);
-            }
-            const formatSeconds = (secs: number) => {
-                    function pad(n : any) {
-                      return (n < 10 ? "0" + n : n);
-                    }
-                  
-                    var h = Math.floor(secs / 3600);
-                    var m = Math.floor(secs / 60) - (h * 60);
-                    var s = Math.floor(secs - h * 3600 - m * 60);
-                  
-                    return pad(h) +":"+ pad(m) +":"+ pad(s);
-                  
-            }
-            
-            let dataToWrite : any = res.data();
-            let dateDailyBonus = dataToWrite.dailyBonus.toDate()
-            let compareDate = (dateDailyBonus.getTime() - new Date(Date.now()).getTime())/1000;
-            if (dateDailyBonus > new Date(Date.now())){
-                setInterval(() => {
-                    compareDate = (dateDailyBonus.getTime() - new Date(Date.now()).getTime())/1000;
-                    if (compareDate > 0){
-                        setDailyBonusCooldown(formatSeconds(compareDate));
-                    }
-                }, 1000)
-            }
 
-            setDailyBonusAvailable(dateDailyBonus < new Date(Date.now()))
-
-            dataToWrite.firebaseId = res.id;
-            setPlayerInformation(dataToWrite);
-            setFirstJoinData(true);
-        });
-    }, [])
 
 
     useEffect(() => {
-        props.socket.on('game-update', (data : any) => {
+        socket.on('game-update', (data : any) => {
             setPlayers([]);
             setGameData([]);
             //TODO ADD ID TO THE VALUES
@@ -81,7 +38,7 @@ function Table(props : any) {
             }
             setGameData(data.game);
         })
-        props.socket.on('countdown', (data : any) => {
+        socket.on('countdown', (data : any) => {
             let time = parseInt(data);
             setCountdown(time);
             let countdownInt = setInterval(() => {
@@ -92,20 +49,20 @@ function Table(props : any) {
                 clearInterval(countdownInt);
             }, time * 1000)
         })
-        props.socket.on('alert-kick', () => {
+        socket.on('alert-kick', () => {
             alert("You have been kicked!")
         })
-        props.socket.on('add', (val : number) => {
-            userWin(props.user.uid, val)
+        socket.on('add', (val : number) => {
+            userWin(user.uid, val)
             setChangeVal(val);
             setTimeout(() => {
                 setChangeVal(0);
             }, 5000);
 
         })
-        props.socket.on('deduct', (val : number) => {  
+        socket.on('deduct', (val : number) => {  
 
-            updateUser(props.user.uid, {
+            updateUser(user.uid, {
                 balance: increment(-val)
             })
             setChangeVal(-val);
@@ -114,14 +71,14 @@ function Table(props : any) {
             }, 5000);
 
         })
-    }, [props.socket])
+    }, [socket])
 
 
     useEffect(() => {
 
         if (gameData.gameState == 'finished' && lastGameState != gameData.gameState){
             for(let i=0; i<players.length; i++){
-                if(players[i].id == props.socket.id){
+                if(players[i].id == socket.id){
                     setPlayerInformation(players[i]);
                     let state = players[i]['state'];
                     if (state == 'lose' || state == 'bust'){
@@ -139,7 +96,7 @@ function Table(props : any) {
     }, [gameData.gameState])
     useEffect(() => {
         for(let i=0; i<players.length; i++){
-            if(players[i].id == props.socket.id){
+            if(players[i].id == socket.id){
                 setPlayerInformation(players[i]);
                 let state = players[i]['state'];
                 if (state == 'lose' || state == 'bust'){
@@ -159,24 +116,7 @@ function Table(props : any) {
             }
         }
     }, [players])
-    useEffect(() => {
-        
-        if (firstJoinData == true){
-            if(playerInformation.username == ""){
-                let newUsername = prompt("You need to set your username first: ");
-                if (newUsername != null){
-                    updateUser(props.user.uid, {
-                         username: newUsername
-                     }).then(() => {
-                         window.location.reload();
-                     }) 
-                }
-            }
-            addToast(`Welcome back, ${playerInformation.username}!`, {appearance: 'success'}); 
-            props.socket.emit('join', playerInformation)
-        }
 
-    },[firstJoinData])
     
     const handleBetValue = (amount : any) => {
         if (betAmount+amount <= playerInformation.balance){
@@ -189,7 +129,7 @@ function Table(props : any) {
         if(betAmount < 1){
             return alert("You cannot bet nothing.");
         }
-        getUser(props.user.uid).then((result) => {
+        getUser(user.uid).then((result) => {
             if (result?.data()?.balance < betAmount){
                 setBetAmount(0);
                 setPlayerInformation({...playerInformation, balance: result.data()?.balance});
@@ -197,121 +137,32 @@ function Table(props : any) {
             }
 
     
-            props.socket.emit('bet', betAmount);
+            socket.emit('bet', betAmount);
             setBetAmount(0);
             setPlayerInformation({...playerInformation, balance: result.data()?.balance-betAmount});
         })
 
     }
 
-    const claimDailyBonus = () => {
-        getUser(props.user.uid).then((res) => {
-            if (res?.data()?.tag == 'ADMIN'){
-                setIsAdmin(true);
-            }
-            const formatSeconds = (secs: number) => {
-                    function pad(n : any) {
-                      return (n < 10 ? "0" + n : n);
-                    }
-                  
-                    var h = Math.floor(secs / 3600);
-                    var m = Math.floor(secs / 60) - (h * 60);
-                    var s = Math.floor(secs - h * 3600 - m * 60);
-                  
-                    return pad(h) +":"+ pad(m) +":"+ pad(s);
-                  
-            }
-            
-            let dataToWrite : any = res.data();
-            let dateDailyBonus = dataToWrite.dailyBonus.toDate()
-            let compareDate = (dateDailyBonus.getTime() - new Date(Date.now()).getTime())/1000;
-            if (dateDailyBonus > new Date(Date.now())){
-                setInterval(() => {
-                    compareDate = (dateDailyBonus.getTime() - new Date(Date.now()).getTime())/1000;
-                    if (compareDate > 0){
-                        setDailyBonusCooldown(formatSeconds(compareDate));
-                    }
-                }, 1000)
-            }
-
-            if (dateDailyBonus < new Date(Date.now())){
-                let currDate = new Date(Date.now())
-                currDate.setDate(currDate.getDate()+1);
-        
-                updateUser(props.user.uid,{
-                    dailyBonus: Timestamp.fromDate(currDate)
-                })
-        
-                props.socket.emit('force-add', 2000)
-                addToast('Claimed daily bonus of 2000$.', {appearance: 'success'});
-                setDailyBonusAvailable(false);
-            }
-
-            dataToWrite.firebaseId = res.id;
-            setPlayerInformation(dataToWrite);
-        });
-
-
-    }
     
-    const logOut = () => {
-        const auth = getAuth();
-        signOut(auth).then(() => {
-            console.log("logged out!");
-            if (props.socket.connected)
-                props.socket.disconnect();  
-        }).catch((error) => {
-            alert("Something went wrong. (Error: " + error + ")");
-        });
-    }
-    
-//TODO: add setplayerbalance to update it
     return (
         <div>
-            <div className="top-bar">
-                <div>
-                    <small>{playerInformation.tag && `[${playerInformation.tag}]`}{playerInformation.username || ""}</small>
-                    <button className="daily-button" onClick={claimDailyBonus} disabled={!dailyBonusAvailable}>{
-                    dailyBonusAvailable ? 
-                    "Claim daily bonus!" :
-                    dailyBonusCooldown
-                    }</button>
-                </div>
-
-                <div className="money-top-part">
-                    <small>Balance: {playerInformation.balance-betAmount}$</small>
-                    <AnimatePresence>
-                        {changeVal != 0 && (
-                            <motion.div
-                            className="change-val"
-                            initial={{ opacity: 0, y: '10vh' }}
-                            animate={{ opacity: 1, y: '-1px' }}
-                            exit={{ opacity: 0 }}
-                            transition={{duration: 1}}>
-                                <small style={{color: changeVal>0 ? "green" : "red"}}>{(changeVal<0?"":"+")+changeVal}</small>
-
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-                <small className="log-out" onClick={logOut}>Log out</small>
-            </div>
-            {props.socket && props.socket.connected ? 
+            {socket && socket.connected ? 
             <>
                 <div className="playing-space">
                     <DealerSpace cards={dealer || []} canShow={gameData.turnId == "Dealer"} />
                     <div className="separator"> <small style={{textTransform: 'uppercase'}}>{gameData.gameState} {countdown > 0 && gameData.gameState == "starting" ? `in ${countdown} seconds` : ''}</small></div>
                     <div className="players">
-                        {players.length > 0 && players.map((player) => <PlayerSpace playerTurn={gameData.turnId == player.id} isLocal={player.id == props.socket.id} player={player}
-                        key={player.id} isAdmin={isAdmin} socket={props.socket} gameData={gameData}/>)}
+                        {players.length > 0 && players.map((player) => <PlayerSpace playerTurn={gameData.turnId == player.id} isLocal={player.id == socket.id} player={player}
+                        key={player.id} isAdmin={isAdmin} socket={socket} gameData={gameData}/>)}
                         
                     </div>
                 </div>
                 {(gameData.gameState == "underway" || gameData.gameState == 'finished') && <div className="play-buttons">
                     
-                    {gameData.turnId == props.socket.id ? <div>
-                        <button onClick={() => props.socket.emit('stand')}><span className="big-icon">✋</span><br/>STAND</button>
-                        <button onClick={() => props.socket.emit('hit')}><span className="big-icon">👉</span><br/>HIT</button>
+                    {gameData.turnId == socket.id ? <div>
+                        <button onClick={() => socket.emit('stand')}><span className="big-icon">✋</span><br/>STAND</button>
+                        <button onClick={() => socket.emit('hit')}><span className="big-icon">👉</span><br/>HIT</button>
                     </div> : <span>{gameResult}</span>}
                 </div>}
                 {(gameData.gameState == "waiting" || gameData.gameState == "starting") && 
@@ -345,4 +196,4 @@ function Table(props : any) {
     )
 }
 
-export default Table
+export default Table;

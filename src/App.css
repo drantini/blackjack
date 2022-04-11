@@ -9,6 +9,88 @@
   font-size: calc(10px + 1.7vmin);
   color: white;
 }
+.top-bar{
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 6vh;
+  width: 100%;
+  background: rgb(44, 44, 44);
+  box-shadow: rgb(87, 87, 87) 0px 0px 40px 5px;
+  display: flex;
+  justify-content:space-between;
+  align-items: center;
+  color: white;
+  font-size:medium; 
+
+}
+.daily-button{
+  margin-left: 25vw;
+  min-width:fit-content;
+  position: absolute;
+  background: linear-gradient(to bottom right, #F9D034, #e0bb2f, #937916);
+  color: black;
+  border-color: #bf9d1d;
+}
+.daily-button:disabled{
+  cursor:not-allowed;
+  box-shadow: inset 0px -6em 0px 0px rgb(2 2 2 / 20%);
+
+}
+@media only screen and (max-width: 1000px) {
+  .daily-button:disabled{
+    display: none;
+  }
+  .daily-button{
+      margin-left: 28vw;
+      min-width: min-content;
+  }
+}
+.menu-dropdown {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.bar1, .bar2, .bar3 {
+  width: 35px;
+  height: 5px;
+  background-color: white;
+  margin: 6px 0;
+  transition: 0.4s;
+}
+.dropdown-menu-box{
+  position: absolute;
+  background: rgb(37, 40, 53);
+  border: 1px solid rgb(60, 64, 83);
+  padding: 10px;
+  transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2vh;
+  overflow:auto;
+  transform: translate(-3.5em, 5%);
+}
+.top-bar > *{
+  margin-left: 10px;
+  margin-right: 10px;
+}
+.center-flex{
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  font-style: normal;
+}
+.top-bar{
+  font-style: italic;
+}
+.top-bar:hover{
+  cursor:default;
+}
+.log-out:hover{
+  cursor:pointer;
+}
 input{
   background: none;
   border: none;
