@@ -5,6 +5,7 @@ import { getDoc, doc, setDoc, updateDoc, increment, Timestamp } from '@firebase/
 import { getAuth, signOut } from '@firebase/auth';
 import PlayerSpace from '../PlayerSpace/PlayerSpace';
 import DealerSpace from '../DealerSpace/DealerSpace';
+import { getUser, updateUser, userWin } from '../../helpers/user';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useToasts } from 'react-toast-notifications';
 
@@ -25,14 +26,13 @@ function Table(props : any) {
     const [gameData, setGameData] = useState<any>({});
     const [betAmount, setBetAmount] = useState(0);
     const [countdown, setCountdown] = useState(0);
-    const [gameResult, setGameResult] = useState('wait');
+    const [gameResult, setGameResult] = useState('Please wait... Others are playing their turn.');
     const [changeVal, setChangeVal] = useState(0);
     const [dailyBonusAvailable, setDailyBonusAvailable] = useState(false);
     const [dailyBonusCooldown, setDailyBonusCooldown] = useState<string | null>(null);
     const [lastGameState, setLastGameState] = useState('');
     useEffect(() => {
-        const userRef = doc(firestore, 'users', props.user.uid);
-        getDoc(userRef).then((res) => {
+        getUser(props.user.uid).then((res) => {
             if (res?.data()?.tag == 'ADMIN'){
                 setIsAdmin(true);
             }
@@ -96,11 +96,7 @@ function Table(props : any) {
             alert("You have been kicked!")
         })
         props.socket.on('add', (val : number) => {
-            let userRef = doc(firestore, 'users', props.user.uid) 
-            updateDoc(userRef, {
-                balance: increment(val),
-                xp: increment(val/10)
-            })
+            userWin(props.user.uid, val)
             setChangeVal(val);
             setTimeout(() => {
                 setChangeVal(0);
@@ -108,9 +104,8 @@ function Table(props : any) {
 
         })
         props.socket.on('deduct', (val : number) => {  
-            let userRef = doc(firestore, 'users', props.user.uid) 
 
-            updateDoc(userRef, {
+            updateUser(props.user.uid, {
                 balance: increment(-val)
             })
             setChangeVal(-val);
@@ -131,20 +126,10 @@ function Table(props : any) {
                     let state = players[i]['state'];
                     if (state == 'lose' || state == 'bust'){
                         addToast(`You lost ${players[i]['bet']}$!`, {appearance: 'error'});
-                        setGameResult(`You lost! Better luck next time. (-${players[i]['bet']}$)`);
                     }else if(state == 'win'){
                         addToast(`You won ${players[i]['bet']*2}$!`, {appearance: 'success'})
-                        setGameResult(`You won! ${players[i]['bet']}$ was added to your balance.`);
                     }else if(state == 'bj'){
                         addToast(`You got blackjack and won ${players[i]['bet']*1.5}$!`, {appearance: 'success'})
-                        setGameResult(`You got blackjack! ${players[i]['bet']*1.5}$ was added to your balance.`)
-                    }else if(state == 'stand'){
-                        setGameResult('Please wait... Others are playing their turn.');
-                    }else if(state == 'push'){
-                        setGameResult(`You pushed with dealer! ${players[i]['bet']}$ was refunded to your balance.`)
-                    }
-                    else{
-                        setGameResult('Please wait for your turn...');
                     }
                 }
             }
@@ -152,15 +137,35 @@ function Table(props : any) {
         setLastGameState(gameData.gameState);
 
     }, [gameData.gameState])
-    
+    useEffect(() => {
+        for(let i=0; i<players.length; i++){
+            if(players[i].id == props.socket.id){
+                setPlayerInformation(players[i]);
+                let state = players[i]['state'];
+                if (state == 'lose' || state == 'bust'){
+                    setGameResult(`You lost! Better luck next time. (-${players[i]['bet']}$)`);
+                }else if(state == 'win'){
+                    setGameResult(`You won! ${players[i]['bet']}$ was added to your balance.`);
+                }else if(state == 'bj'){
+                    setGameResult(`You got blackjack! ${players[i]['bet']*1.5}$ was added to your balance.`)
+                }else if(state == 'stand'){
+                    setGameResult('Please wait... Others are playing their turn.');
+                }else if(state == 'push'){
+                    setGameResult(`You pushed with dealer! ${players[i]['bet']}$ was refunded to your balance.`)
+                }
+                else{
+                    setGameResult('Please wait for your turn...');
+                }
+            }
+        }
+    }, [players])
     useEffect(() => {
         
         if (firstJoinData == true){
             if(playerInformation.username == ""){
                 let newUsername = prompt("You need to set your username first: ");
                 if (newUsername != null){
-                    const docRef = doc(firestore, 'users', props.user.uid)
-                    updateDoc(docRef, {
+                    updateUser(props.user.uid, {
                          username: newUsername
                      }).then(() => {
                          window.location.reload();
@@ -184,8 +189,7 @@ function Table(props : any) {
         if(betAmount < 1){
             return alert("You cannot bet nothing.");
         }
-        const docRef = doc(firestore, 'users', props.user.uid);
-        getDoc(docRef).then((result) => {
+        getUser(props.user.uid).then((result) => {
             if (result?.data()?.balance < betAmount){
                 setBetAmount(0);
                 setPlayerInformation({...playerInformation, balance: result.data()?.balance});
@@ -201,8 +205,7 @@ function Table(props : any) {
     }
 
     const claimDailyBonus = () => {
-        const userRef = doc(firestore, 'users', props.user.uid);
-        getDoc(userRef).then((res) => {
+        getUser(props.user.uid).then((res) => {
             if (res?.data()?.tag == 'ADMIN'){
                 setIsAdmin(true);
             }
@@ -235,7 +238,7 @@ function Table(props : any) {
                 let currDate = new Date(Date.now())
                 currDate.setDate(currDate.getDate()+1);
         
-                updateDoc(userRef,{
+                updateUser(props.user.uid,{
                     dailyBonus: Timestamp.fromDate(currDate)
                 })
         
@@ -251,8 +254,6 @@ function Table(props : any) {
 
     }
     
-    
-
     const logOut = () => {
         const auth = getAuth();
         signOut(auth).then(() => {

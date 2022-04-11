@@ -25,7 +25,7 @@ let database = {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
-console.log("I'M RUNNING!")
+let isCountdown = false;
 async function newDeck(){
     await fetch('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=6').then((response) => response.json()).then((data) => {
         if(data.success == true){
@@ -43,7 +43,6 @@ const hasAceInHand = (cardsOnHand) => {
     return false;
 }
 function getCardValue(cardsOnHand){
-    console.log(cardsOnHand);
     
     let sum = 0;
     for (const card of cardsOnHand) {
@@ -175,7 +174,6 @@ async function startGame(force){
                 database['players'][id]['state'] = 'bj';
                 database['players'][id]['stats']['blackjacks'] += 1;
             }else{
-                console.log("DEDUCT " + id + ": " + database['players'][id]['bet']);
                 io.to(id).emit('deduct', database['players'][id]['bet'])
                 database['players'][id]['balance'] -= database['players'][id]['bet']
                 database['players'][id]['state'] = 'wait';
@@ -242,14 +240,15 @@ io.on('connection', socket => {
     })
 
     socket.on('bet', (betAmount) => {
-        if(database['game'].gameState == "waiting"){
+        if(database['game'].gameState == "waiting" && isCountdown == false){
             database['game'].gameState = 'starting';
-            io.emit('countdown', '45');
+            io.emit('countdown', '25');
+            isCountdown = true;
             countdown = setTimeout(() => {
                 startGame();
-            }, 45 * 1000)
+                isCountdown = false;
+            }, 25 * 1000)
         }
-
         database['players'][socket.id].bet = betAmount;
         let canStart = true;
         for(const id in database['players']){
@@ -261,6 +260,7 @@ io.on('connection', socket => {
             if(countdown){
                 clearTimeout(countdown);
             }
+            isCountdown = false;
             startGame();
         }
         io.emit('game-update', database);

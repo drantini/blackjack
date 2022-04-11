@@ -10,10 +10,10 @@ function DealerSpace({cards, canShow} : any) {
 
 
     useEffect(() => {
+        setCardValue(0);
         if (!cards || cards.length == 0){
             return;
         }
-        setCardValue(0);
         
         const countHandValue = (cardsOnHand : any) => {
             const hasAceInHand = (cardsOnHand : any) => {
