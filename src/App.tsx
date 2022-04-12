@@ -162,7 +162,7 @@ function App() {
 
   return (
     <>
-      <div className="top-bar">
+      {user && <div className="top-bar">
           <div className="center-flex">
               <span>{playerInformation.tag && `[${playerInformation.tag}]`}{playerInformation.username || ""}</span>
               <button className="daily-button" onClick={claimDailyBonus} disabled={!dailyBonusAvailable}>{
@@ -207,7 +207,7 @@ function App() {
             </AnimatePresence>
           </div>
 
-      </div>
+      </div>}
       <div className="Blackjack">
         {user && socket ? <Table user={user} socket={socket} setChangeVal={setChangeVal} playerInformation={playerInformation} setPlayerInformation={setPlayerInformation} isAdmin={isAdmin}/> : <Auth/>}
       </div>
