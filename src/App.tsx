@@ -12,14 +12,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { getUser, updateUser } from './helpers/user';
 import { Timestamp } from 'firebase/firestore';
 
-let developer = true;
+let developer = false;
 
 enum Game{
   Blackjack = 0,
   Coinflip,
   Crash,
 }
-
+  //TODO: Move socket to games individually, it will be chaotic if it stays here
+  //      Improve dropdown menu
 function App() {  
   const [user, loading, error] = useAuthState(auth);
   const [currentGame, setCurrentGame] = useState<Game>()
@@ -74,9 +75,8 @@ function App() {
     });
   
     };
-
-
   }, [user]) 
+
   const claimDailyBonus = () => {
     if (user == null){
       return alert("Something went wrong. (US404)");
