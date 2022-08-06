@@ -5,14 +5,15 @@ import { useAuthState } from 'react-firehooks/auth';
 import { getAuth, signOut } from '@firebase/auth';
 
 import Auth from './components/Auth/Auth';
-import Table from './components/Table/Table';
-import socketIoClient, { Socket } from 'socket.io-client';
+import Table from './components/BlackjackTable/BlackjackTable';
+import { Socket } from 'socket.io-client';
+import Coinflip from './components/Coinflip/Coinflip';
 import {useToasts } from 'react-toast-notifications';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getUser, updateUser } from './helpers/user';
 import { Timestamp } from 'firebase/firestore';
 
-let developer = false;
+let developer = true;
 
 enum Game{
   Blackjack = 0,
@@ -23,21 +24,19 @@ enum Game{
   //      Improve dropdown menu
 function App() {  
   const [user, loading, error] = useAuthState(auth);
-  const [currentGame, setCurrentGame] = useState<Game>()
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [currentGame, setCurrentGame] = useState<Game>(Game.Blackjack);
   const [changeVal, setChangeVal] = useState(0);
   const [dailyBonusAvailable, setDailyBonusAvailable] = useState(false);
   const [dailyBonusCooldown, setDailyBonusCooldown] = useState<string | null>(null);
   const [playerInformation, setPlayerInformation] = useState<any>({});
-  const [firstJoinData, setFirstJoinData] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const { addToast } = useToasts();
 
   useEffect(() => {
     if(!loading && user){
-      const socket = socketIoClient(developer ? 'http://localhost:8080': `https://blackjack-sostmi.herokuapp.com/`);
-      setSocket(socket);
+
       getUser(user.uid).then((res) => {
         if (res?.data()?.tag == 'ADMIN'){
             setIsAdmin(true);
@@ -71,7 +70,6 @@ function App() {
 
         dataToWrite.firebaseId = res.id;
         setPlayerInformation(dataToWrite);
-        setFirstJoinData(true);
     });
   
     };
@@ -130,24 +128,7 @@ function App() {
 
 }
 
-  useEffect(() => {
-        
-    if (firstJoinData == true && user){
-        if(playerInformation.username == ""){
-            let newUsername = prompt("You need to set your username first: ");
-            if (newUsername != null){
-                updateUser(user.uid, {
-                     username: newUsername
-                 }).then(() => {
-                     window.location.reload();
-                 }) 
-            }
-        }
-        addToast(`Welcome back, ${playerInformation.username}!`, {appearance: 'success'}); 
-        socket?.emit('join', playerInformation)
-    }
 
-  },[firstJoinData])
   const logOut = () => {
     const auth = getAuth();
     signOut(auth).then(() => {
@@ -208,8 +189,14 @@ function App() {
           </div>
 
       </div>}
-      <div className="Blackjack">
-        {user && socket ? <Table user={user} socket={socket} setChangeVal={setChangeVal} playerInformation={playerInformation} setPlayerInformation={setPlayerInformation} isAdmin={isAdmin}/> : <Auth/>}
+      <div className="main">
+        {user 
+        && currentGame == Game.Blackjack ? 
+        <Table user={user} developer={developer} setMainSocket={setSocket} setChangeVal={setChangeVal} playerInformation={playerInformation} setPlayerInformation={setPlayerInformation} isAdmin={isAdmin}/> 
+        : currentGame == Game.Coinflip ? 
+        <Coinflip/>
+        : 
+        <Auth/>}
       </div>
     </>
 

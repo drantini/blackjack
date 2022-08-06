@@ -1,8 +1,9 @@
 import express from 'express';
-
-const app = express();
+import fetch from 'node-fetch'
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+
+const app = express();
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -11,7 +12,6 @@ const io = new Server(httpServer, {
     }
 });
 httpServer.listen(process.env.PORT || 8080);
-import fetch from 'node-fetch'
 let maxPlayers = 8;
 let database = {
     "game":{
@@ -24,7 +24,7 @@ let database = {
 "players":{}};
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
+}
 let isCountdown = false;
 async function newDeck(){
     await fetch('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=6').then((response) => response.json()).then((data) => {

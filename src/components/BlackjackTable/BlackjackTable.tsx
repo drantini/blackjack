@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import './Table.css';
+import './BlackjackTable.css';
 import { increment } from '@firebase/firestore';
 import PlayerSpace from '../PlayerSpace/PlayerSpace';
 import DealerSpace from '../DealerSpace/DealerSpace';
 import { getUser, updateUser, userWin } from '../../helpers/user';
 import {motion } from 'framer-motion';
 import { useToasts } from 'react-toast-notifications';
+import socketIoClient, { Socket } from 'socket.io-client';
 
 function Chip(props : any){
     return(
@@ -13,7 +14,7 @@ function Chip(props : any){
     )
 }
 
-function Table({socket, user, setChangeVal, playerInformation, setPlayerInformation, isAdmin} : any) {
+function BlackjackTable({developer, user, setMainSocket, setChangeVal, playerInformation, setPlayerInformation, isAdmin} : any) {
     const { addToast } = useToasts();
 
     const [players, setPlayers] = useState<any[]>([]);
@@ -21,13 +22,41 @@ function Table({socket, user, setChangeVal, playerInformation, setPlayerInformat
     const [gameData, setGameData] = useState<any>({});
     const [betAmount, setBetAmount] = useState(0);
     const [countdown, setCountdown] = useState(0);
+    const [socket, setSocket] = useState<Socket | null>(null);
     const [gameResult, setGameResult] = useState('Please wait... Others are playing their turn.');
-
+    const [firstJoinData, setFirstJoinData] = useState(false);
+    const [sentJoin, setSentJoin] = useState(false);
     const [lastGameState, setLastGameState] = useState('');
-
-
+    useEffect(() => {
+        const socket = socketIoClient(developer ? 'http://localhost:8080': `https://blackjack-sostmi.herokuapp.com/`);
+        setSocket(socket);
+        setMainSocket(socket);
+        setFirstJoinData(true);
+    }, [])
+    useEffect(() => {
+        
+        if (playerInformation.balance && firstJoinData == true && user && sentJoin == false){
+            if(playerInformation.username == ""){
+                let newUsername = prompt("You need to set your username first: ");
+                if (newUsername != null){
+                    updateUser(user.uid, {
+                         username: newUsername
+                     }).then(() => {
+                         window.location.reload();
+                     }) 
+                }
+            }
+            addToast(`Welcome back, ${playerInformation.username}!`, {appearance: 'success'}); 
+            socket?.emit('join', playerInformation)
+            setSentJoin(true);
+        }
+    
+    },[firstJoinData, playerInformation])
 
     useEffect(() => {
+        if(socket == null){
+            return;
+        }
         socket.on('game-update', (data : any) => {
             setPlayers([]);
             setGameData([]);
@@ -78,7 +107,7 @@ function Table({socket, user, setChangeVal, playerInformation, setPlayerInformat
 
         if (gameData.gameState == 'finished' && lastGameState != gameData.gameState){
             for(let i=0; i<players.length; i++){
-                if(players[i].id == socket.id){
+                if(players[i].id == socket?.id){
                     setPlayerInformation(players[i]);
                     let state = players[i]['state'];
                     if (state == 'lose' || state == 'bust'){
@@ -96,7 +125,7 @@ function Table({socket, user, setChangeVal, playerInformation, setPlayerInformat
     }, [gameData.gameState])
     useEffect(() => {
         for(let i=0; i<players.length; i++){
-            if(players[i].id == socket.id){
+            if(players[i].id == socket?.id){
                 setPlayerInformation(players[i]);
                 let state = players[i]['state'];
                 if (state == 'lose' || state == 'bust'){
@@ -136,8 +165,7 @@ function Table({socket, user, setChangeVal, playerInformation, setPlayerInformat
                 return alert("You do not have enough balance for that.")
             }
 
-    
-            socket.emit('bet', betAmount);
+            socket?.emit('bet', betAmount);
             setBetAmount(0);
             setPlayerInformation({...playerInformation, balance: result.data()?.balance-betAmount});
         })
@@ -148,7 +176,7 @@ function Table({socket, user, setChangeVal, playerInformation, setPlayerInformat
     return (
         <div>
             {socket && socket.connected ? 
-            <>
+            <div className="blackjack-wrapper">
                 <div className="playing-space">
                     <DealerSpace cards={dealer || []} canShow={gameData.turnId == "Dealer"} />
                     <div className="separator"> <small style={{textTransform: 'uppercase'}}>{gameData.gameState} {countdown > 0 && gameData.gameState == "starting" ? `in ${countdown} seconds` : ''}</small></div>
@@ -186,7 +214,7 @@ function Table({socket, user, setChangeVal, playerInformation, setPlayerInformat
     
 
                 </div>}
-            </> : 
+            </div> : 
             <>
                 <span>Connecting to server...</span>
             </>} 
@@ -196,4 +224,4 @@ function Table({socket, user, setChangeVal, playerInformation, setPlayerInformat
     )
 }
 
-export default Table;
+export default BlackjackTable;
